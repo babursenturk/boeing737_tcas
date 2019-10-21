@@ -1,0 +1,15 @@
+#include <m8c.h>        // part specific constants and macros  
+#include "PSoCAPI.h"    // PSoC API definitions for all User Modules   
+INT  iData;  
+void main()  
+{  
+   M8C_EnableGInt;                       // Enable Global Interrupts  
+   ADCINC12_Start(ADCINC12_HIGHPOWER);   // Apply power to the SC Block  
+   ADCINC12_GetSamples(0);               // Have ADC run continuously  
+   for(;;){  
+      while(ADCINC12_fIsDataAvailable() == 0);   // Loop until value ready  
+      ADCINC12_ClearFlag();                      // Clear ADC flag  
+      iData=ADCINC12_iGetData();                 // Get ADC result  
+      // Add user code here to use or display result  
+   }  
+ }  

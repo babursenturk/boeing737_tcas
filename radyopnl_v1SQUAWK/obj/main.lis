@@ -1,0 +1,1250 @@
+ 0000                   cpu LMM
+                        .module main.c
+                        .area data(ram, con, rel)
+ 0000           _STATUS::
+ 0000 0000              .word 0
+ 0002                   .dbfile ./hbheader.h
+ 0002                   .dbsym e STATUS _STATUS I
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./hbheader.h
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./hbheader.h
+ 0000           _adc_res::
+ 0000 00                .byte 0
+ 0001 00000000000000000000      .word 0,0,0,0,0
+ 000B 0000000000        .byte 0,0,0,0,0
+ 0010                   .dbfile ./main.c
+ 0010                   .dbsym e adc_res _adc_res A[16:16]c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _ekran_res::
+ 0000 00                .byte 0
+ 0001 000000            .byte 0,0,0
+ 0004                   .dbsym e ekran_res _ekran_res A[4:4]c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _sol_intkisim::
+ 0000 00                .byte 0
+ 0001                   .dbsym e sol_intkisim _sol_intkisim c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _sol_decisim::
+ 0000 00                .byte 0
+ 0001                   .dbsym e sol_decisim _sol_decisim c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _sag_intkisim::
+ 0000 00                .byte 0
+ 0001                   .dbsym e sag_intkisim _sag_intkisim c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _sag_decisim::
+ 0000 00                .byte 0
+ 0001                   .dbsym e sag_decisim _sag_decisim c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+                        .area text(rom, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000                   .dbfunc e Counter8_1_ISR _Counter8_1_ISR fV
+ 0000           _Counter8_1_ISR::
+ 0000                   .dbline -1
+ 0000 71C0              or F,-64
+ 0002 08                push A
+ 0003 5DD0              mov A,REG[0xd0]
+ 0005 08                push A
+ 0006 5DD3              mov A,REG[0xd3]
+ 0008 08                push A
+ 0009 5DD4              mov A,REG[0xd4]
+ 000B 08                push A
+ 000C 5DD5              mov A,REG[0xd5]
+ 000E 08                push A
+ 000F 62D000            mov REG[0xd0],>__r0
+ 0012 5100              mov A,[__r0]
+ 0014 08                push A
+ 0015 5100              mov A,[__r1]
+ 0017 08                push A
+ 0018 5100              mov A,[__r2]
+ 001A 08                push A
+ 001B 5100              mov A,[__r3]
+ 001D 08                push A
+ 001E 5100              mov A,[__r4]
+ 0020 08                push A
+ 0021 5100              mov A,[__r5]
+ 0023 08                push A
+ 0024 5100              mov A,[__r6]
+ 0026 08                push A
+ 0027 5100              mov A,[__r7]
+ 0029 08                push A
+ 002A 5100              mov A,[__r8]
+ 002C 08                push A
+ 002D 5100              mov A,[__r9]
+ 002F 08                push A
+ 0030 5100              mov A,[__r10]
+ 0032 08                push A
+ 0033 5100              mov A,[__r11]
+ 0035 08                push A
+ 0036 5100              mov A,[__rX]
+ 0038 08                push A
+ 0039 5100              mov A,[__rY]
+ 003B 08                push A
+ 003C 5100              mov A,[__rZ]
+ 003E 08                push A
+ 003F                   .dbline 36
+ 003F           ; //----------------------------------------------------------------------------
+ 003F           ; // Radio Panel 14.May.2009
+ 003F           ; //----------------------------------------------------------------------------
+ 003F           ; 
+ 003F           ; #include <m8c.h>
+ 003F           ; #include "PSoCAPI.h"
+ 003F           ; #include "hbheader.h"
+ 003F           ; #include "stdlib.h"
+ 003F           ; 
+ 003F           ; #define SLAVE_ADDRESS 13
+ 003F           ; 
+ 003F           ; BYTE    txBuffer[32];  
+ 003F           ; BYTE    rxBuffer[32]; 
+ 003F           ; BYTE  lastport;
+ 003F           ; BYTE  adc_res[16] = {0}; 
+ 003F           ; BYTE  iResult;
+ 003F           ; BYTE  ekran_res[4] = {0};  // [0]=NAV ACT, [1]=NAV STB
+ 003F           ; BYTE  sol_intkisim=0, sol_decisim=0, sag_intkisim=0, sag_decisim=0;
+ 003F           ; 
+ 003F           ; BYTE    status;  
+ 003F           ; BYTE *ptr;
+ 003F           ; //char *intRy et;
+ 003F           ; char intRet[8];
+ 003F           ; 
+ 003F           ; WORD cnt;
+ 003F           ; WORD acnt;
+ 003F           ; WORD Timeout_d;
+ 003F           ; void  I2Oku(void), I2Yaz(void);
+ 003F           ; void Int_tostring(int val), ADConv(void);
+ 003F           ; 
+ 003F           ; #pragma interrupt_handler Counter8_1_ISR, encoder_isr
+ 003F           ; void Counter8_1_ISR(void); void encoder_isr(void);
+ 003F           ; 
+ 003F           ; void dly(long int mS), init_environment(void);
+ 003F           ; 
+ 003F           ; void Counter8_1_ISR() {Counter8_1_DisableInt(); Counter8_1_Stop(); DELAY_CLR;}
+ 003F                   .dbline 36
+ 003F 10                push X
+ 0040 7C0000            xcall _Counter8_1_DisableInt
+ 0043                   .dbline 36
+ 0043 7C0000            xcall _Counter8_1_Stop
+ 0046 20                pop X
+ 0047                   .dbline 36
+ 0047 62D000            mov REG[0xd0],>_STATUS
+ 004A 5101              mov A,[_STATUS+1]
+ 004C 21FE              and A,-2
+ 004E 62D000            mov REG[0xd0],>__r0
+ 0051 5300              mov [__r1],A
+ 0053 62D000            mov REG[0xd0],>_STATUS
+ 0056 5100              mov A,[_STATUS]
+ 0058 62D000            mov REG[0xd0],>__r0
+ 005B 5300              mov [__r0],A
+ 005D 5100              mov A,[__r1]
+ 005F 08                push A
+ 0060 5100              mov A,[__r0]
+ 0062 62D000            mov REG[0xd0],>_STATUS
+ 0065 5300              mov [_STATUS],A
+ 0067 18                pop A
+ 0068 5301              mov [_STATUS+1],A
+ 006A                   .dbline -2
+ 006A                   .dbline 36
+ 006A           L1:
+ 006A 62D000            mov REG[0xD0],>__r0
+ 006D 18                pop A
+ 006E 5300              mov [__rZ],A
+ 0070 18                pop A
+ 0071 5300              mov [__rY],A
+ 0073 18                pop A
+ 0074 5300              mov [__rX],A
+ 0076 18                pop A
+ 0077 5300              mov [__r11],A
+ 0079 18                pop A
+ 007A 5300              mov [__r10],A
+ 007C 18                pop A
+ 007D 5300              mov [__r9],A
+ 007F 18                pop A
+ 0080 5300              mov [__r8],A
+ 0082 18                pop A
+ 0083 5300              mov [__r7],A
+ 0085 18                pop A
+ 0086 5300              mov [__r6],A
+ 0088 18                pop A
+ 0089 5300              mov [__r5],A
+ 008B 18                pop A
+ 008C 5300              mov [__r4],A
+ 008E 18                pop A
+ 008F 5300              mov [__r3],A
+ 0091 18                pop A
+ 0092 5300              mov [__r2],A
+ 0094 18                pop A
+ 0095 5300              mov [__r1],A
+ 0097 18                pop A
+ 0098 5300              mov [__r0],A
+ 009A 18                pop A
+ 009B 60D5              mov REG[213],A
+ 009D 18                pop A
+ 009E 60D4              mov REG[212],A
+ 00A0 18                pop A
+ 00A1 60D3              mov REG[211],A
+ 00A3 18                pop A
+ 00A4 60D0              mov REG[208],A
+ 00A6 18                pop A
+ 00A7                   .dbline 0 ; func end
+ 00A7 7E                reti
+ 00A8                   .dbend
+ 00A8                   .dbfunc e encoder_isr _encoder_isr fV
+ 00A8           _encoder_isr::
+ 00A8                   .dbline -1
+ 00A8                   .dbline 38
+ 00A8           ; 
+ 00A8           ; void encoder_isr(void){
+ 00A8                   .dbline -2
+ 00A8                   .dbline 39
+ 00A8           ; }
+ 00A8           L2:
+ 00A8                   .dbline 0 ; func end
+ 00A8 7E                reti
+ 00A9                   .dbend
+ 00A9                   .dbfunc e init_environment _init_environment fV
+ 00A9           _init_environment::
+ 00A9                   .dbline -1
+ 00A9                   .dbline 42
+ 00A9           ;               
+ 00A9           ; void init_environment()
+ 00A9           ; {     PRT1DR |= 0xA0;         //release et pinleri
+ 00A9                   .dbline 42
+ 00A9 4304A0            or REG[0x4],-96
+ 00AC                   .dbline 43
+ 00AC           ;       I2CHW_1_Start(); I2CHW_1_EnableSlave(); I2CHW_1_EnableInt();
+ 00AC 10                push X
+ 00AD 7C0000            xcall _I2CHW_1_Start
+ 00B0                   .dbline 43
+ 00B0 7C0000            xcall _I2CHW_1_EnableSlave
+ 00B3                   .dbline 43
+ 00B3 7C0000            xcall _I2CHW_1_EnableInt
+ 00B6                   .dbline 44
+ 00B6           ;       I2CHW_1_InitRamRead(txBuffer,32);
+ 00B6 5020              mov A,32
+ 00B8 08                push A
+ 00B9 5000              mov A,>_txBuffer
+ 00BB 08                push A
+ 00BC 5000              mov A,<_txBuffer
+ 00BE 08                push A
+ 00BF 7C0000            xcall _I2CHW_1_InitRamRead
+ 00C2 38FD              add SP,-3
+ 00C4                   .dbline 45
+ 00C4           ;     I2CHW_1_InitWrite(rxBuffer,32);
+ 00C4 5020              mov A,32
+ 00C6 08                push A
+ 00C7 5000              mov A,>_rxBuffer
+ 00C9 08                push A
+ 00CA 5000              mov A,<_rxBuffer
+ 00CC 08                push A
+ 00CD 7C0000            xcall _I2CHW_1_InitWrite
+ 00D0 38FD              add SP,-3
+ 00D2 20                pop X
+ 00D3                   .dbline 46
+ 00D3           ;       M8C_EnableGInt; M8C_EnableIntMask (INT_MSK0, INT_MSK0_GPIO); LED7SEG_1_Start();
+ 00D3 7101                      or  F, 01h
+ 00D5           
+ 00D5                   .dbline 46
+ 00D5 43E020            or REG[0xe0],32
+ 00D8                   .dbline 46
+ 00D8 7C0000            xcall _LED7SEG_1_Start
+ 00DB                   .dbline 47
+ 00DB           ;       PGA_1_Start(PGA_1_MEDPOWER); ADCINC12_1_Start(ADCINC12_1_MEDPOWER);ADCINC12_1_GetSamples(1);
+ 00DB 10                push X
+ 00DC 5002              mov A,2
+ 00DE 7C0000            xcall _PGA_1_Start
+ 00E1                   .dbline 47
+ 00E1 5002              mov A,2
+ 00E3 7C0000            xcall _ADCINC12_1_Start
+ 00E6                   .dbline 47
+ 00E6 5001              mov A,1
+ 00E8 7C0000            xcall _ADCINC12_1_GetSamples
+ 00EB 20                pop X
+ 00EC                   .dbline 49
+ 00EC           ;     
+ 00EC           ;     ekran_res[0]=0; lastport=0;
+ 00EC 62D000            mov REG[0xd0],>_ekran_res
+ 00EF 550000            mov [_ekran_res],0
+ 00F2                   .dbline 49
+ 00F2 62D000            mov REG[0xd0],>_lastport
+ 00F5 550000            mov [_lastport],0
+ 00F8                   .dbline 50
+ 00F8           ;     ekran_res[1]=0;
+ 00F8 62D000            mov REG[0xd0],>_ekran_res
+ 00FB 550100            mov [_ekran_res+1],0
+ 00FE                   .dbline 51
+ 00FE           ;     ekran_res[2]=0;
+ 00FE 550200            mov [_ekran_res+2],0
+ 0101                   .dbline 52
+ 0101           ;     ekran_res[3]=0;
+ 0101 550300            mov [_ekran_res+3],0
+ 0104                   .dbline -2
+ 0104                   .dbline 53
+ 0104           ;     }
+ 0104           L3:
+ 0104                   .dbline 0 ; func end
+ 0104 7F                ret
+ 0105                   .dbend
+ 0105                   .dbfunc e init_delay_counter _init_delay_counter fV
+ 0105           ;             DC -> X-11
+ 0105           ;            mSn -> X-7
+ 0105           _init_delay_counter::
+ 0105                   .dbline -1
+ 0105 10                push X
+ 0106 4F                mov X,SP
+ 0107                   .dbline 56
+ 0107           ; 
+ 0107           ; void init_delay_counter(long int mSn, long int DC)
+ 0107           ; {   Counter8_1_WritePeriod(mSn); Counter8_1_WriteCompareValue(DC); Counter8_1_EnableInt();DELAY_SET; Counter8_1_Start();}
+ 0107                   .dbline 56
+ 0107 62D000            mov REG[0xd0],>__r0
+ 010A 52FC              mov A,[X-4]
+ 010C 10                push X
+ 010D 7C0000            xcall _Counter8_1_WritePeriod
+ 0110 20                pop X
+ 0111                   .dbline 56
+ 0111 62D000            mov REG[0xd0],>__r0
+ 0114 52F8              mov A,[X-8]
+ 0116 10                push X
+ 0117 7C0000            xcall _Counter8_1_WriteCompareValue
+ 011A                   .dbline 56
+ 011A 7C0000            xcall _Counter8_1_EnableInt
+ 011D 20                pop X
+ 011E                   .dbline 56
+ 011E 62D000            mov REG[0xd0],>_STATUS
+ 0121 2E0101            or [_STATUS+1],1
+ 0124                   .dbline 56
+ 0124 10                push X
+ 0125 7C0000            xcall _Counter8_1_Start
+ 0128 20                pop X
+ 0129                   .dbline -2
+ 0129                   .dbline 56
+ 0129           L7:
+ 0129 20                pop X
+ 012A                   .dbline 0 ; func end
+ 012A 7F                ret
+ 012B                   .dbsym l DC -11 L
+ 012B                   .dbsym l mSn -7 L
+ 012B                   .dbend
+ 012B                   .dbfunc e main _main fV
+ 012B           ;         dummy1 -> X+0
+ 012B           _main::
+ 012B                   .dbline -1
+ 012B 10                push X
+ 012C 4F                mov X,SP
+ 012D 3803              add SP,3
+ 012F                   .dbline 60
+ 012F           ; /* ---------------------------------------------------------------------- */
+ 012F           ; 
+ 012F           ; void main()
+ 012F           ; {
+ 012F                   .dbline 66
+ 012F           ; // NAV LIMITS   = 108.00-117.95 (2048--6037)
+ 012F           ; // COMM LIMITS  = 118.00-136.97 (6144--13975)
+ 012F           ; // XPNDR LIMITS = 0000-7777           (Octal system)
+ 012F           ; // ADF LIMITS   = 0100.0-1799.9
+ 012F           ; 
+ 012F           ;       init_environment();
+ 012F 9F78              xcall _init_environment
+ 0131 8252              xjmp L10
+ 0133           L9:
+ 0133                   .dbline 68
+ 0133           ;       
+ 0133           ;       while(1)  {
+ 0133                   .dbline 71
+ 0133           ;                       //txBuffer[0]=
+ 0133           ;                       BYTE dummy1;
+ 0133           ;                       I2Oku();
+ 0133 92DC              xcall _I2Oku
+ 0135                   .dbline 75
+ 0135           ; 
+ 0135           ; 
+ 0135           ;                       //sayiyaz();
+ 0135           ;                       dummy1 = PRT3DR^lastport;       //durumu degisen pin varmi?
+ 0135 5D0C              mov A,REG[0xc]
+ 0137 62D000            mov REG[0xd0],>__r0
+ 013A 5300              mov [__r0],A
+ 013C 62D000            mov REG[0xd0],>_lastport
+ 013F 5100              mov A,[_lastport]
+ 0141 62D000            mov REG[0xd0],>__r0
+ 0144 3400              xor [__r0],A
+ 0146 5100              mov A,[__r0]
+ 0148 5400              mov [X+0],A
+ 014A                   .dbline 77
+ 014A           ; 
+ 014A           ;                       if (dummy1 & BSET_0) {          //0. pinin durumu degismis
+ 014A 480001            tst [X+0],1
+ 014D A082              jz L12
+ 014F                   .dbline 77
+ 014F                   .dbline 78
+ 014F           ;                               lastport=PRT3DR;
+ 014F 5D0C              mov A,REG[0xc]
+ 0151 62D000            mov REG[0xd0],>_lastport
+ 0154 5300              mov [_lastport],A
+ 0156                   .dbline 79
+ 0156 5D0C              mov A,REG[0xc]
+ 0158 62D000            mov REG[0xd0],>__r0
+ 015B 2103              and A,3
+ 015D 5402              mov [X+2],A
+ 015F 560100            mov [X+1],0
+ 0162 3D0100            cmp [X+1],0
+ 0165 B006              jnz X3
+ 0167 3D0201            cmp [X+2],1
+ 016A A00D              jz L17
+ 016C           X3:
+ 016C 3D0100            cmp [X+1],0
+ 016F B006              jnz X4
+ 0171 3D0203            cmp [X+2],3
+ 0174 A030              jz L27
+ 0176           X4:
+ 0176 8059              xjmp L14
+ 0178           X0:
+ 0178                   .dbline 79
+ 0178           ;                               switch  (PRT3DR & 0b00000011) { //bu encoder hangi yone donuyor?
+ 0178           L17:
+ 0178                   .dbline 86
+ 0178           ; //                                            case 0: if (PRT2DR & BSET_7) {
+ 0178           ; //                                                                    if (ekran_res[2]==7) {ekran_res[2]=0;} else {ekran_res[2]++; }}
+ 0178           ; //                                                            else {
+ 0178           ; //                                                                    if (ekran_res[0]==7) {ekran_res[0]=0;} else {ekran_res[0]++; }}
+ 0178           ; //                                                            break;
+ 0178           ; //                                            
+ 0178           ;                                               case 1: if (PRT7DR & BSET_7) {
+ 0178 491C80            tst REG[0x1c],-128
+ 017B A015              jz L18
+ 017D                   .dbline 86
+ 017D                   .dbline 87
+ 017D 62D000            mov REG[0xd0],>_ekran_res
+ 0180 3C0200            cmp [_ekran_res+2],0
+ 0183 B006              jnz L20
+ 0185                   .dbline 87
+ 0185                   .dbline 87
+ 0185 550207            mov [_ekran_res+2],7
+ 0188                   .dbline 87
+ 0188 8047              xjmp L15
+ 018A           L20:
+ 018A                   .dbline 87
+ 018A           ;                                                                       if (ekran_res[2]==0) {ekran_res[2]=7;} else {ekran_res[2]--; }}
+ 018A                   .dbline 87
+ 018A 62D000            mov REG[0xd0],>_ekran_res
+ 018D 7A02              dec [_ekran_res+2]
+ 018F                   .dbline 87
+ 018F                   .dbline 87
+ 018F 8040              xjmp L15
+ 0191           L18:
+ 0191                   .dbline 88
+ 0191           ;                                                               else {
+ 0191                   .dbline 89
+ 0191 62D000            mov REG[0xd0],>_ekran_res
+ 0194 3C0000            cmp [_ekran_res],0
+ 0197 B006              jnz L25
+ 0199                   .dbline 89
+ 0199                   .dbline 89
+ 0199 550007            mov [_ekran_res],7
+ 019C                   .dbline 89
+ 019C 8033              xjmp L15
+ 019E           L25:
+ 019E                   .dbline 89
+ 019E           ;                                                                       if (ekran_res[0]==0) {ekran_res[0]=7;} else {ekran_res[0]--; }}
+ 019E                   .dbline 89
+ 019E 62D000            mov REG[0xd0],>_ekran_res
+ 01A1 7A00              dec [_ekran_res]
+ 01A3                   .dbline 89
+ 01A3                   .dbline 89
+ 01A3                   .dbline 90
+ 01A3           ;                                                               break;
+ 01A3 802C              xjmp L15
+ 01A5           L27:
+ 01A5                   .dbline 98
+ 01A5           ;                                               
+ 01A5           ; //                                            case 2: if (PRT2DR & BSET_7) {
+ 01A5           ; //                                                                    if (ekran_res[2]==0) {ekran_res[2]=7;} else {ekran_res[2]--; }}
+ 01A5           ; //                                                            else {
+ 01A5           ; //                                                                    if (ekran_res[0]==0) {ekran_res[0]=7;} else {ekran_res[0]--; }}
+ 01A5           ; //                                                            break;
+ 01A5           ; //                                            
+ 01A5           ;                                               case 3: if (PRT7DR & BSET_7) {
+ 01A5 491C80            tst REG[0x1c],-128
+ 01A8 A015              jz L28
+ 01AA                   .dbline 98
+ 01AA                   .dbline 99
+ 01AA 62D000            mov REG[0xd0],>_ekran_res
+ 01AD 3C0207            cmp [_ekran_res+2],7
+ 01B0 B006              jnz L30
+ 01B2                   .dbline 99
+ 01B2                   .dbline 99
+ 01B2 550200            mov [_ekran_res+2],0
+ 01B5                   .dbline 99
+ 01B5 801A              xjmp L15
+ 01B7           L30:
+ 01B7                   .dbline 99
+ 01B7           ;                                                                       if (ekran_res[2]==7) {ekran_res[2]=0;} else {ekran_res[2]++; }}
+ 01B7                   .dbline 99
+ 01B7 62D000            mov REG[0xd0],>_ekran_res
+ 01BA 7602              inc [_ekran_res+2]
+ 01BC                   .dbline 99
+ 01BC                   .dbline 99
+ 01BC 8013              xjmp L15
+ 01BE           L28:
+ 01BE                   .dbline 100
+ 01BE           ;                                                               else {
+ 01BE                   .dbline 101
+ 01BE 62D000            mov REG[0xd0],>_ekran_res
+ 01C1 3C0007            cmp [_ekran_res],7
+ 01C4 B006              jnz L35
+ 01C6                   .dbline 101
+ 01C6                   .dbline 101
+ 01C6 550000            mov [_ekran_res],0
+ 01C9                   .dbline 101
+ 01C9 8006              xjmp L15
+ 01CB           L35:
+ 01CB                   .dbline 101
+ 01CB           ;                                                                       if (ekran_res[0]==7) {ekran_res[0]=0;} else {ekran_res[0]++; }}
+ 01CB                   .dbline 101
+ 01CB 62D000            mov REG[0xd0],>_ekran_res
+ 01CE 7600              inc [_ekran_res]
+ 01D0                   .dbline 101
+ 01D0                   .dbline 101
+ 01D0                   .dbline 102
+ 01D0           ;                                                               break;
+ 01D0           L14:
+ 01D0           L15:
+ 01D0                   .dbline 104
+ 01D0           ;                                               
+ 01D0           ;                                               }}
+ 01D0           L12:
+ 01D0                   .dbline 105
+ 01D0           ;                       if (dummy1 & BSET_2) {          //2. pinin durumu degismis
+ 01D0 480004            tst [X+0],4
+ 01D3 A08A              jz L37
+ 01D5                   .dbline 105
+ 01D5                   .dbline 106
+ 01D5           ;                               lastport=PRT3DR;
+ 01D5 5D0C              mov A,REG[0xc]
+ 01D7 62D000            mov REG[0xd0],>_lastport
+ 01DA 5300              mov [_lastport],A
+ 01DC                   .dbline 107
+ 01DC           ;                               switch  (PRT3DR & 0b00001100) { //bu encoder hangi yone donuyor?
+ 01DC 5D0C              mov A,REG[0xc]
+ 01DE 62D000            mov REG[0xd0],>__r0
+ 01E1 210C              and A,12
+ 01E3 5402              mov [X+2],A
+ 01E5 560100            mov [X+1],0
+ 01E8 5202              mov A,[X+2]
+ 01EA 1104              sub A,4
+ 01EC 5300              mov [__rY],A
+ 01EE 5201              mov A,[X+1]
+ 01F0 3180              xor A,-128
+ 01F2 1980              sbb A,(0 ^ 0x80)
+ 01F4 C069              jc L39
+ 01F6 2A00              or A,[__rY]
+ 01F8 A00D              jz L42
+ 01FA           X5:
+ 01FA           L68:
+ 01FA 3D0100            cmp [X+1],0
+ 01FD B006              jnz X6
+ 01FF 3D020C            cmp [X+2],12
+ 0202 A030              jz L55
+ 0204           X6:
+ 0204 8059              xjmp L39
+ 0206           X1:
+ 0206                   .dbline 107
+ 0206           L42:
+ 0206                   .dbline 114
+ 0206           ; //                                            case 0: if (PRT2DR & BSET_6) {
+ 0206           ; //                                                                    if (ekran_res[3]==7) {ekran_res[3]=0;} else {ekran_res[3]++; }}
+ 0206           ; //                                                            else {
+ 0206           ; //                                                                    if (ekran_res[1]==7) {ekran_res[1]=0;} else {ekran_res[1]++; }}
+ 0206           ; //                                                            break;
+ 0206           ; //                                            
+ 0206           ;                                               case 4: if (PRT7DR & BSET_0) {
+ 0206 491C01            tst REG[0x1c],1
+ 0209 A015              jz L43
+ 020B                   .dbline 114
+ 020B                   .dbline 115
+ 020B 62D000            mov REG[0xd0],>_ekran_res
+ 020E 3C0300            cmp [_ekran_res+3],0
+ 0211 B006              jnz L45
+ 0213                   .dbline 115
+ 0213                   .dbline 115
+ 0213 550307            mov [_ekran_res+3],7
+ 0216                   .dbline 115
+ 0216 8047              xjmp L40
+ 0218           L45:
+ 0218                   .dbline 115
+ 0218           ;                                                                       if (ekran_res[3]==0) {ekran_res[3]=7;} else {ekran_res[3]--; }}
+ 0218                   .dbline 115
+ 0218 62D000            mov REG[0xd0],>_ekran_res
+ 021B 7A03              dec [_ekran_res+3]
+ 021D                   .dbline 115
+ 021D                   .dbline 115
+ 021D 8040              xjmp L40
+ 021F           L43:
+ 021F                   .dbline 116
+ 021F           ;                                                               else {
+ 021F                   .dbline 117
+ 021F 62D000            mov REG[0xd0],>_ekran_res
+ 0222 3C0100            cmp [_ekran_res+1],0
+ 0225 B006              jnz L50
+ 0227                   .dbline 117
+ 0227                   .dbline 117
+ 0227 550107            mov [_ekran_res+1],7
+ 022A                   .dbline 117
+ 022A 8033              xjmp L40
+ 022C           L50:
+ 022C                   .dbline 117
+ 022C           ;                                                                       if (ekran_res[1]==0) {ekran_res[1]=7;} else {ekran_res[1]--; }}
+ 022C                   .dbline 117
+ 022C 62D000            mov REG[0xd0],>_ekran_res
+ 022F 7A01              dec [_ekran_res+1]
+ 0231                   .dbline 117
+ 0231                   .dbline 117
+ 0231                   .dbline 118
+ 0231           ;                                                               break;
+ 0231 802C              xjmp L40
+ 0233           L55:
+ 0233                   .dbline 126
+ 0233           ;                                               
+ 0233           ; //                                            case 8: if (PRT2DR & BSET_6) {
+ 0233           ; //                                                                    if (ekran_res[3]==0) {ekran_res[3]=7;} else {ekran_res[3]--; }}
+ 0233           ; //                                                            else {
+ 0233           ; //                                                                    if (ekran_res[1]==0) {ekran_res[1]=7;} else {ekran_res[1]--; }}
+ 0233           ; //                                                            break;
+ 0233           ; //                                            
+ 0233           ;                                               case 12: if (PRT7DR & BSET_0) {
+ 0233 491C01            tst REG[0x1c],1
+ 0236 A015              jz L56
+ 0238                   .dbline 126
+ 0238                   .dbline 127
+ 0238 62D000            mov REG[0xd0],>_ekran_res
+ 023B 3C0307            cmp [_ekran_res+3],7
+ 023E B006              jnz L58
+ 0240                   .dbline 127
+ 0240                   .dbline 127
+ 0240 550300            mov [_ekran_res+3],0
+ 0243                   .dbline 127
+ 0243 801A              xjmp L40
+ 0245           L58:
+ 0245                   .dbline 127
+ 0245           ;                                                                       if (ekran_res[3]==7) {ekran_res[3]=0;} else {ekran_res[3]++; }}
+ 0245                   .dbline 127
+ 0245 62D000            mov REG[0xd0],>_ekran_res
+ 0248 7603              inc [_ekran_res+3]
+ 024A                   .dbline 127
+ 024A                   .dbline 127
+ 024A 8013              xjmp L40
+ 024C           L56:
+ 024C                   .dbline 128
+ 024C           ;                                                               else {
+ 024C                   .dbline 129
+ 024C 62D000            mov REG[0xd0],>_ekran_res
+ 024F 3C0107            cmp [_ekran_res+1],7
+ 0252 B006              jnz L63
+ 0254                   .dbline 129
+ 0254                   .dbline 129
+ 0254 550100            mov [_ekran_res+1],0
+ 0257                   .dbline 129
+ 0257 8006              xjmp L40
+ 0259           L63:
+ 0259                   .dbline 129
+ 0259           ;                                                                       if (ekran_res[1]==7) {ekran_res[1]=0;} else {ekran_res[1]++; }}
+ 0259                   .dbline 129
+ 0259 62D000            mov REG[0xd0],>_ekran_res
+ 025C 7601              inc [_ekran_res+1]
+ 025E                   .dbline 129
+ 025E                   .dbline 129
+ 025E                   .dbline 130
+ 025E           ;                                                               break;
+ 025E           L39:
+ 025E           L40:
+ 025E                   .dbline 132
+ 025E           ;                                               
+ 025E           ;                                               }}
+ 025E           L37:
+ 025E                   .dbline 134
+ 025E           ; 
+ 025E           ;                       txBuffer[0]=ekran_res[0];       //sol asil hane
+ 025E 62D000            mov REG[0xd0],>_ekran_res
+ 0261 5100              mov A,[_ekran_res]
+ 0263 62D000            mov REG[0xd0],>_txBuffer
+ 0266 5300              mov [_txBuffer],A
+ 0268                   .dbline 135
+ 0268           ;                       txBuffer[2]=ekran_res[1];       //sag asil hane
+ 0268 62D000            mov REG[0xd0],>_ekran_res
+ 026B 5101              mov A,[_ekran_res+1]
+ 026D 62D000            mov REG[0xd0],>_txBuffer
+ 0270 5302              mov [_txBuffer+2],A
+ 0272                   .dbline 136
+ 0272           ;                       txBuffer[1]=ekran_res[2];       //sol decimal hane
+ 0272 62D000            mov REG[0xd0],>_ekran_res
+ 0275 5102              mov A,[_ekran_res+2]
+ 0277 62D000            mov REG[0xd0],>_txBuffer
+ 027A 5301              mov [_txBuffer+1],A
+ 027C                   .dbline 137
+ 027C           ;                       txBuffer[3]=ekran_res[3];       //sag decimal hane
+ 027C 62D000            mov REG[0xd0],>_ekran_res
+ 027F 5103              mov A,[_ekran_res+3]
+ 0281 62D000            mov REG[0xd0],>_txBuffer
+ 0284 5303              mov [_txBuffer+3],A
+ 0286                   .dbline 146
+ 0286           ; 
+ 0286           ;                       //LED7SEG_1_DispInt(iResult, 1, 4);                     
+ 0286           ;                       // <=30 STBY
+ 0286           ;                       // 30<<40 ALT
+ 0286           ;                       // 40<<93 XPNDR
+ 0286           ;                       // 93<<160 TA ONLY
+ 0286           ;                       // >=161 TA/RA
+ 0286           ;                       
+ 0286           ;                       if (iResult<=24) {txBuffer[4]=1;}
+ 0286 62D000            mov REG[0xd0],>_iResult
+ 0289 5018              mov A,24
+ 028B 3A00              cmp A,[_iResult]
+ 028D C007              jc L75
+ 028F           X7:
+ 028F                   .dbline 146
+ 028F                   .dbline 146
+ 028F 62D000            mov REG[0xd0],>_txBuffer
+ 0292 550401            mov [_txBuffer+4],1
+ 0295                   .dbline 146
+ 0295           L75:
+ 0295                   .dbline 147
+ 0295           ;                       if ((iResult>=25) && (iResult<=60)) {txBuffer[4]=2;}
+ 0295 62D000            mov REG[0xd0],>_iResult
+ 0298 3C0019            cmp [_iResult],25
+ 029B C010              jc L78
+ 029D           X8:
+ 029D 62D000            mov REG[0xd0],>_iResult
+ 02A0 503C              mov A,60
+ 02A2 3A00              cmp A,[_iResult]
+ 02A4 C007              jc L78
+ 02A6           X9:
+ 02A6                   .dbline 147
+ 02A6                   .dbline 147
+ 02A6 62D000            mov REG[0xd0],>_txBuffer
+ 02A9 550402            mov [_txBuffer+4],2
+ 02AC                   .dbline 147
+ 02AC           L78:
+ 02AC                   .dbline 148
+ 02AC           ;                       if ((iResult>=61) && (iResult<=93)) {txBuffer[4]=3;}
+ 02AC 62D000            mov REG[0xd0],>_iResult
+ 02AF 3C003D            cmp [_iResult],61
+ 02B2 C010              jc L81
+ 02B4           X10:
+ 02B4 62D000            mov REG[0xd0],>_iResult
+ 02B7 505D              mov A,93
+ 02B9 3A00              cmp A,[_iResult]
+ 02BB C007              jc L81
+ 02BD           X11:
+ 02BD                   .dbline 148
+ 02BD                   .dbline 148
+ 02BD 62D000            mov REG[0xd0],>_txBuffer
+ 02C0 550403            mov [_txBuffer+4],3
+ 02C3                   .dbline 148
+ 02C3           L81:
+ 02C3                   .dbline 149
+ 02C3           ;                       if ((iResult>=94) && (iResult<=160)) {txBuffer[4]=4;}
+ 02C3 62D000            mov REG[0xd0],>_iResult
+ 02C6 3C005E            cmp [_iResult],94
+ 02C9 C010              jc L84
+ 02CB           X12:
+ 02CB 62D000            mov REG[0xd0],>_iResult
+ 02CE 50A0              mov A,-96
+ 02D0 3A00              cmp A,[_iResult]
+ 02D2 C007              jc L84
+ 02D4           X13:
+ 02D4                   .dbline 149
+ 02D4                   .dbline 149
+ 02D4 62D000            mov REG[0xd0],>_txBuffer
+ 02D7 550404            mov [_txBuffer+4],4
+ 02DA                   .dbline 149
+ 02DA           L84:
+ 02DA                   .dbline 150
+ 02DA           ;                       if (iResult>=161)  {txBuffer[4]=5;}
+ 02DA 62D000            mov REG[0xd0],>_iResult
+ 02DD 3C00A1            cmp [_iResult],-95
+ 02E0 C007              jc L87
+ 02E2           X14:
+ 02E2                   .dbline 150
+ 02E2                   .dbline 150
+ 02E2 62D000            mov REG[0xd0],>_txBuffer
+ 02E5 550405            mov [_txBuffer+4],5
+ 02E8                   .dbline 150
+ 02E8           L87:
+ 02E8                   .dbline 152
+ 02E8           ;                       
+ 02E8           ;                       if (PRT4DR & BSET_7) {
+ 02E8 491080            tst REG[0x10],-128
+ 02EB A011              jz L90
+ 02ED                   .dbline 152
+ 02ED                   .dbline 153
+ 02ED           ;                               if (txBuffer[4]<10)  {txBuffer[4] = txBuffer[4]+100;} }
+ 02ED 62D000            mov REG[0xd0],>_txBuffer
+ 02F0 3C040A            cmp [_txBuffer+4],10
+ 02F3 D01B              jnc L91
+ 02F5           X15:
+ 02F5                   .dbline 153
+ 02F5                   .dbline 153
+ 02F5 62D000            mov REG[0xd0],>_txBuffer
+ 02F8 060464            add [_txBuffer+4],100
+ 02FB                   .dbline 153
+ 02FB                   .dbline 153
+ 02FB 8013              xjmp L91
+ 02FD           L90:
+ 02FD                   .dbline 154
+ 02FD           ;                       else {
+ 02FD                   .dbline 155
+ 02FD 62D000            mov REG[0xd0],>_txBuffer
+ 0300 500A              mov A,10
+ 0302 3A04              cmp A,[_txBuffer+4]
+ 0304 D00A              jnc L97
+ 0306           X16:
+ 0306                   .dbline 155
+ 0306                   .dbline 155
+ 0306 62D000            mov REG[0xd0],>_txBuffer
+ 0309 5104              mov A,[_txBuffer+4]
+ 030B 1164              sub A,100
+ 030D 5304              mov [_txBuffer+4],A
+ 030F                   .dbline 155
+ 030F           L97:
+ 030F                   .dbline 155
+ 030F           ;                               if (txBuffer[4]>10)  {txBuffer[4] = txBuffer[4]-100;} }
+ 030F           L91:
+ 030F                   .dbline 160
+ 030F 10                push X
+ 0310 5001              mov A,1
+ 0312 08                push A
+ 0313 08                push A
+ 0314 62D000            mov REG[0xd0],>_ekran_res
+ 0317 5100              mov A,[_ekran_res]
+ 0319 62D000            mov REG[0xd0],>__r0
+ 031C 5300              mov [__r1],A
+ 031E 5000              mov A,0
+ 0320 08                push A
+ 0321 5100              mov A,[__r1]
+ 0323 08                push A
+ 0324 7C0000            xcall _LED7SEG_1_DispInt
+ 0327 38FC              add SP,-4
+ 0329                   .dbline 161
+ 0329 5001              mov A,1
+ 032B 08                push A
+ 032C 5002              mov A,2
+ 032E 08                push A
+ 032F 62D000            mov REG[0xd0],>_ekran_res
+ 0332 5102              mov A,[_ekran_res+2]
+ 0334 62D000            mov REG[0xd0],>__r0
+ 0337 5300              mov [__r1],A
+ 0339 5000              mov A,0
+ 033B 08                push A
+ 033C 5100              mov A,[__r1]
+ 033E 08                push A
+ 033F 7C0000            xcall _LED7SEG_1_DispInt
+ 0342 38FC              add SP,-4
+ 0344                   .dbline 162
+ 0344 5001              mov A,1
+ 0346 08                push A
+ 0347 5003              mov A,3
+ 0349 08                push A
+ 034A 62D000            mov REG[0xd0],>_ekran_res
+ 034D 5101              mov A,[_ekran_res+1]
+ 034F 62D000            mov REG[0xd0],>__r0
+ 0352 5300              mov [__r1],A
+ 0354 5000              mov A,0
+ 0356 08                push A
+ 0357 5100              mov A,[__r1]
+ 0359 08                push A
+ 035A 7C0000            xcall _LED7SEG_1_DispInt
+ 035D 38FC              add SP,-4
+ 035F                   .dbline 163
+ 035F 5001              mov A,1
+ 0361 08                push A
+ 0362 5004              mov A,4
+ 0364 08                push A
+ 0365 62D000            mov REG[0xd0],>_ekran_res
+ 0368 5103              mov A,[_ekran_res+3]
+ 036A 62D000            mov REG[0xd0],>__r0
+ 036D 5300              mov [__r1],A
+ 036F 5000              mov A,0
+ 0371 08                push A
+ 0372 5100              mov A,[__r1]
+ 0374 08                push A
+ 0375 7C0000            xcall _LED7SEG_1_DispInt
+ 0378 38FC              add SP,-4
+ 037A 20                pop X
+ 037B                   .dbline 165
+ 037B 9071              xcall _I2Yaz
+ 037D                   .dbline 166
+ 037D 10                push X
+ 037E 7C0000            xcall _ADCINC12_1_ClearFlag
+ 0381 20                pop X
+ 0382                   .dbline 167
+ 0382 90B0              xcall _ADConv
+ 0384                   .dbline 170
+ 0384           L10:
+ 0384                   .dbline 68
+ 0384 8DAE              xjmp L9
+ 0386           X2:
+ 0386                   .dbline -2
+ 0386                   .dbline 171
+ 0386           ;                               
+ 0386           ;                       
+ 0386           ;                       
+ 0386           ; //                    LED7SEG_1_DispInt(txBuffer[4], 1, 4);   
+ 0386           ;                       LED7SEG_1_DispInt(ekran_res[0], 1, 1);
+ 0386           ;                       LED7SEG_1_DispInt(ekran_res[2], 2, 1);
+ 0386           ;                       LED7SEG_1_DispInt(ekran_res[1], 3, 1);
+ 0386           ;                       LED7SEG_1_DispInt(ekran_res[3], 4, 1);
+ 0386           ;                       
+ 0386           ;                       I2Yaz();
+ 0386           ;                               ADCINC12_1_ClearFlag();
+ 0386           ;                               ADConv();
+ 0386           ; 
+ 0386           ;       
+ 0386           ; }//while kapa 
+ 0386           ; }//main kapa
+ 0386           L8:
+ 0386 38FD              add SP,-3
+ 0388 20                pop X
+ 0389                   .dbline 0 ; func end
+ 0389 8FFF              jmp .
+ 038B                   .dbsym l dummy1 0 c
+ 038B                   .dbend
+ 038B                   .dbfunc e dly _dly fV
+ 038B           ;             mS -> X-7
+ 038B           _dly::
+ 038B                   .dbline -1
+ 038B 10                push X
+ 038C 4F                mov X,SP
+ 038D                   .dbline 173
+ 038D                   .dbline 173
+ 038D 62D000            mov REG[0xd0],>__r0
+ 0390 5000              mov A,0
+ 0392 08                push A
+ 0393 08                push A
+ 0394 08                push A
+ 0395 5002              mov A,2
+ 0397 08                push A
+ 0398 52F9              mov A,[X-7]
+ 039A 08                push A
+ 039B 52FA              mov A,[X-6]
+ 039D 08                push A
+ 039E 52FB              mov A,[X-5]
+ 03A0 08                push A
+ 03A1 52FC              mov A,[X-4]
+ 03A3 08                push A
+ 03A4 7C0000            xcall __divmod_32X32_32
+ 03A7 18                pop A
+ 03A8 5300              mov [__r3],A
+ 03AA 18                pop A
+ 03AB 5300              mov [__r2],A
+ 03AD 18                pop A
+ 03AE 5300              mov [__r1],A
+ 03B0 18                pop A
+ 03B1 38FC              add SP,-4
+ 03B3 08                push A
+ 03B4 5100              mov A,[__r1]
+ 03B6 08                push A
+ 03B7 5100              mov A,[__r2]
+ 03B9 08                push A
+ 03BA 5100              mov A,[__r3]
+ 03BC 08                push A
+ 03BD 52F9              mov A,[X-7]
+ 03BF 08                push A
+ 03C0 52FA              mov A,[X-6]
+ 03C2 08                push A
+ 03C3 52FB              mov A,[X-5]
+ 03C5 08                push A
+ 03C6 52FC              mov A,[X-4]
+ 03C8 08                push A
+ 03C9 9D3A              xcall _init_delay_counter
+ 03CB 38F8              add SP,-8
+ 03CD           L106:
+ 03CD                   .dbline 173
+ 03CD           L107:
+ 03CD                   .dbline 173
+ 03CD           ; 
+ 03CD           ; void dly(long int mS){init_delay_counter(mS,mS/2); while (DELAY_INVOKE);{}}
+ 03CD 62D000            mov REG[0xd0],>_STATUS
+ 03D0 5101              mov A,[_STATUS+1]
+ 03D2 2101              and A,1
+ 03D4 62D000            mov REG[0xd0],>__r0
+ 03D7 5300              mov [__r1],A
+ 03D9 62D000            mov REG[0xd0],>_STATUS
+ 03DC 5100              mov A,[_STATUS]
+ 03DE 2100              and A,0
+ 03E0 62D000            mov REG[0xd0],>__r0
+ 03E3 3900              cmp A,0
+ 03E5 BFE7              jnz L106
+ 03E7 3C0000            cmp [__r1],0
+ 03EA BFE2              jnz L106
+ 03EC           X17:
+ 03EC                   .dbline 173
+ 03EC                   .dbline 173
+ 03EC                   .dbline -2
+ 03EC                   .dbline 173
+ 03EC           L105:
+ 03EC 20                pop X
+ 03ED                   .dbline 0 ; func end
+ 03ED 7F                ret
+ 03EE                   .dbsym l mS -7 L
+ 03EE                   .dbend
+ 03EE                   .dbfunc e I2Yaz _I2Yaz fV
+ 03EE           _I2Yaz::
+ 03EE                   .dbline -1
+ 03EE                   .dbline 176
+ 03EE                   .dbline 177
+ 03EE 10                push X
+ 03EF 7C0000            xcall _I2CHW_1_bReadI2CStatus
+ 03F2 20                pop X
+ 03F3 62D000            mov REG[0xd0],>_status
+ 03F6 5300              mov [_status],A
+ 03F8                   .dbline 178
+ 03F8 470004            tst [_status],4
+ 03FB A014              jz L110
+ 03FD                   .dbline 179
+ 03FD                   .dbline 180
+ 03FD 10                push X
+ 03FE 7C0000            xcall _I2CHW_1_ClrRdStatus
+ 0401                   .dbline 181
+ 0401 5020              mov A,32
+ 0403 08                push A
+ 0404 5000              mov A,>_txBuffer
+ 0406 08                push A
+ 0407 5000              mov A,<_txBuffer
+ 0409 08                push A
+ 040A 7C0000            xcall _I2CHW_1_InitRamRead
+ 040D 38FD              add SP,-3
+ 040F 20                pop X
+ 0410                   .dbline 181
+ 0410           L110:
+ 0410                   .dbline -2
+ 0410                   .dbline 181
+ 0410           ; 
+ 0410           ; void I2Yaz()
+ 0410           ; {
+ 0410           ;               status = I2CHW_1_bReadI2CStatus();
+ 0410           ;               if( status & I2CHW_RD_COMPLETE )
+ 0410           ;               {
+ 0410           ;                       I2CHW_1_ClrRdStatus();
+ 0410           ;                       I2CHW_1_InitRamRead(txBuffer,32);}}
+ 0410           L109:
+ 0410                   .dbline 0 ; func end
+ 0410 7F                ret
+ 0411                   .dbend
+ 0411                   .dbfunc e I2Oku _I2Oku fV
+ 0411           _I2Oku::
+ 0411                   .dbline -1
+ 0411                   .dbline 184
+ 0411                   .dbline 185
+ 0411 10                push X
+ 0412 7C0000            xcall _I2CHW_1_bReadI2CStatus
+ 0415 20                pop X
+ 0416 62D000            mov REG[0xd0],>_status
+ 0419 5300              mov [_status],A
+ 041B                   .dbline 186
+ 041B 470040            tst [_status],64
+ 041E A014              jz L113
+ 0420                   .dbline 187
+ 0420                   .dbline 188
+ 0420 10                push X
+ 0421 7C0000            xcall _I2CHW_1_ClrWrStatus
+ 0424                   .dbline 189
+ 0424 5020              mov A,32
+ 0426 08                push A
+ 0427 5000              mov A,>_rxBuffer
+ 0429 08                push A
+ 042A 5000              mov A,<_rxBuffer
+ 042C 08                push A
+ 042D 7C0000            xcall _I2CHW_1_InitWrite
+ 0430 38FD              add SP,-3
+ 0432 20                pop X
+ 0433                   .dbline 189
+ 0433           L113:
+ 0433                   .dbline -2
+ 0433                   .dbline 189
+ 0433           ; 
+ 0433           ; void I2Oku()
+ 0433           ; {
+ 0433           ;         status = I2CHW_1_bReadI2CStatus();  
+ 0433           ;         if( status & I2CHW_WR_COMPLETE )  
+ 0433           ;         {
+ 0433           ;               I2CHW_1_ClrWrStatus();  
+ 0433           ;               I2CHW_1_InitWrite(rxBuffer,32);}}
+ 0433           L112:
+ 0433                   .dbline 0 ; func end
+ 0433 7F                ret
+ 0434                   .dbend
+ 0434                   .dbfunc e ADConv _ADConv fV
+ 0434           _ADConv::
+ 0434                   .dbline -1
+ 0434                   .dbline 192
+ 0434           ;               
+ 0434           ; void ADConv()
+ 0434           ; {
+ 0434                   .dbline 193
+ 0434           ;       ADCINC12_1_GetSamples(1);
+ 0434 10                push X
+ 0435 5001              mov A,1
+ 0437 7C0000            xcall _ADCINC12_1_GetSamples
+ 043A 20                pop X
+ 043B           L116:
+ 043B                   .dbline 195
+ 043B           L117:
+ 043B                   .dbline 195
+ 043B           ;       
+ 043B           ;       while (ADCINC12_1_fIsDataAvailable() == 0);
+ 043B 10                push X
+ 043C 7C0000            xcall _ADCINC12_1_fIsDataAvailable
+ 043F 62D000            mov REG[0xd0],>__r0
+ 0442 20                pop X
+ 0443 3900              cmp A,0
+ 0445 AFF5              jz L116
+ 0447                   .dbline 196
+ 0447           ;       iResult =(ADCINC12_1_iGetData() + 2048)/16;
+ 0447 10                push X
+ 0448 7C0000            xcall _ADCINC12_1_iGetData
+ 044B 62D000            mov REG[0xd0],>__r0
+ 044E 5300              mov [__r1],A
+ 0450 5A00              mov [__r0],X
+ 0452 20                pop X
+ 0453 060000            add [__r1],0
+ 0456 0E0008            adc [__r0],8
+ 0459 5000              mov A,0
+ 045B 08                push A
+ 045C 5010              mov A,16
+ 045E 08                push A
+ 045F 5100              mov A,[__r0]
+ 0461 08                push A
+ 0462 5100              mov A,[__r1]
+ 0464 08                push A
+ 0465 7C0000            xcall __divmod_16X16_16
+ 0468 18                pop A
+ 0469 5300              mov [__r1],A
+ 046B 18                pop A
+ 046C 38FE              add SP,-2
+ 046E 5100              mov A,[__r1]
+ 0470 62D000            mov REG[0xd0],>_iResult
+ 0473 5300              mov [_iResult],A
+ 0475                   .dbline 197
+ 0475           ;               if (iResult<=0) {iResult=0;}
+ 0475 5000              mov A,0
+ 0477 3A00              cmp A,[_iResult]
+ 0479 C007              jc L119
+ 047B           X18:
+ 047B                   .dbline 197
+ 047B                   .dbline 197
+ 047B 62D000            mov REG[0xd0],>_iResult
+ 047E 550000            mov [_iResult],0
+ 0481                   .dbline 197
+ 0481           L119:
+ 0481                   .dbline 198
+ 0481           ;               if (iResult>=254) {iResult=255;}
+ 0481 62D000            mov REG[0xd0],>_iResult
+ 0484 3C00FE            cmp [_iResult],-2
+ 0487 C007              jc L121
+ 0489           X19:
+ 0489                   .dbline 198
+ 0489                   .dbline 198
+ 0489 62D000            mov REG[0xd0],>_iResult
+ 048C 5500FF            mov [_iResult],-1
+ 048F                   .dbline 198
+ 048F           L121:
+ 048F                   .dbline 200
+ 048F           ;       
+ 048F           ;       ADCINC12_1_ClearFlag();
+ 048F 10                push X
+ 0490 7C0000            xcall _ADCINC12_1_ClearFlag
+ 0493 20                pop X
+ 0494                   .dbline -2
+ 0494                   .dbline 201
+ 0494           ; }
+ 0494           L115:
+ 0494                   .dbline 0 ; func end
+ 0494 7F                ret
+ 0495                   .dbend
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _Timeout_d::
+ 0000 0000              .byte 0,0
+ 0002                   .dbsym e Timeout_d _Timeout_d i
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _acnt::
+ 0000 0000              .byte 0,0
+ 0002                   .dbsym e acnt _acnt i
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _cnt::
+ 0000 0000              .byte 0,0
+ 0002                   .dbsym e cnt _cnt i
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _intRet::
+ 0000 0000000000000000  .byte 0,0,0,0,0,0,0,0
+ 0008                   .dbsym e intRet _intRet A[8:8]c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _ptr::
+ 0000 0000              .byte 0,0
+ 0002                   .dbsym e ptr _ptr pc
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _iResult::
+ 0000 00                .byte 0
+ 0001                   .dbsym e iResult _iResult c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _lastport::
+ 0000 00                .byte 0
+ 0001                   .dbsym e lastport _lastport c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _rxBuffer::
+ 0000 00000000000000000000      .word 0,0,0,0,0
+ 000A 00000000000000000000      .word 0,0,0,0,0
+ 0014 00000000000000000000      .word 0,0,0,0,0
+ 001E 0000              .byte 0,0
+ 0020                   .dbsym e rxBuffer _rxBuffer A[32:32]c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _txBuffer::
+ 0000 00000000000000000000      .word 0,0,0,0,0
+ 000A 00000000000000000000      .word 0,0,0,0,0
+ 0014 00000000000000000000      .word 0,0,0,0,0
+ 001E 0000              .byte 0,0
+ 0020                   .dbsym e txBuffer _txBuffer A[32:32]c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _mevcut::
+ 0000 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000  .word 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+ 003C 00000000          .byte 0,0,0,0
+ 0040                   .dbfile ./hbheader.h
+ 0040                   .dbsym e mevcut _mevcut A[64:32]I
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./hbheader.h
+ 0000           _status::
+ 0000 00                .byte 0
+ 0001                   .dbfile ./main.c
+ 0001                   .dbsym e status _status c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _dummy::
+ 0000 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000  .word 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+ 003C 00000000          .byte 0,0,0,0
+ 0040                   .dbfile ./hbheader.h
+ 0040                   .dbsym e dummy _dummy A[64:32]I
